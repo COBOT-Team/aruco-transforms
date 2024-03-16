@@ -103,12 +103,16 @@ public:
    * @param[in] img_marker_ids The IDs of the markers that were detected.
    * @param[in] img_marker_corners The corners of the markers that were detected.
    * @param[in] size The size of the output image.
+   * @param[in] fallback If true, use the previous warp matrix if markers are not detected.
+   * @param[in] outline_on_fallback If true, draw a red outline on the output image if markers are
+   *                                not detected.
    * @return
    */
   bool warp_perpective(const cv::Mat& input, cv::Mat& output,
                        const std::vector<int>& img_marker_ids,
                        const std::vector<std::vector<cv::Point2f>> img_marker_corners,
-                       const cv::Size& size) const;
+                       const cv::Size& size, bool fallback = true,
+                       bool outline_on_fallback = true) const;
 
   /**
    * Get the correct aspect ratio of the warped image.
@@ -126,6 +130,9 @@ private:
 
   // The aspect ratio of the warped image.
   float warp_aspect_ratio_;
+
+  // The most recent warp matrix. Can be used when markers are not detected.
+  std::unique_ptr<cv::Mat> previous_warp_matrix_;
 };
 
 #endif

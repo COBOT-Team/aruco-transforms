@@ -83,7 +83,8 @@ bool ArucoDefinedObject::solve_transform(const vector<int>& img_marker_ids,
 
 bool ArucoDefinedObject::warp_perpective(
   const Mat& input, Mat& output, const vector<int>& img_marker_ids,
-  const std::vector<std::vector<cv::Point2f>> img_marker_corners, const Size& size) const
+  const std::vector<std::vector<cv::Point2f>> img_marker_corners, const Size& size,
+  bool fallback = true, bool outline_on_fallback = true) const
 {
   // Find the points that correspond to the object.
   vector<Point2f> img_points;
@@ -98,12 +99,25 @@ bool ArucoDefinedObject::warp_perpective(
     }
   }
 
-  // Make sure we have 4 points.
-  if (img_points.size() != 4) return false;
+  // Generate a warp matrix, either from the detected points or the previous matrix.
+  Mat transform;
+  bool has_4_points = img_points.size() == 4;
+  if (has_4_points) {
+    transform = getPerspectiveTransform(img_points, obj_points);
+    *previous_warp_matrix_ = transform;
+  } else if (fallback) {
+    transform = *previous_warp_matrix_;
+  } else {
+    return false;
+  }
 
   // Warp the input image to isolate the object.
-  Mat transform = getPerspectiveTransform(img_points, obj_points);
   warpPerspective(input, output, transform, size);
+
+  // Draw a red outline on the output image if markers are not detected.
+  if (outline_on_fallback && !has_4_points) {
+    cv::rectangle(output, cv::Point(0, 0), size, cv::Scalar(255, 0, 0), 16);
+  }
 
   return true;
 }
