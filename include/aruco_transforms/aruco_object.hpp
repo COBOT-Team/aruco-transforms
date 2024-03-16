@@ -67,8 +67,8 @@ public:
    * @param[in] markers The markers that define the object.
    * @param[in] object_corners The 4 corners of the object in object space.
    */
-  ArucoDefinedObject(cv::SolvePnPMethod method, const std::vector<ArucoMarkerObjectPoints> markers,
-                     const std::array<ArucoMarkerWarpedImagePoint, 4> object_corners);
+  ArucoDefinedObject(cv::SolvePnPMethod method, const std::vector<ArucoMarkerObjectPoints>& markers,
+                     const std::array<ArucoMarkerWarpedImagePoint, 4>& object_corners);
 
   /**
    * Set the markers and bounding box that define the object.

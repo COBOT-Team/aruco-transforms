@@ -24,7 +24,13 @@ generate_parameter_library(
   src/parameters.yaml
 )
 
-add_executable(aruco_transforms src/aruco_transforms.cpp src/config.cpp)
+add_executable(aruco_transforms
+  src/aruco_transforms.cpp
+  src/aruco_object.cpp
+  src/aruco_transform_node.cpp
+  src/config.cpp
+)
+
 target_include_directories(aruco_transforms PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

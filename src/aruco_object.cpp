@@ -1,14 +1,12 @@
 #include "aruco_transforms/aruco_object.hpp"
 
-#include "aruco_object.hpp"
-
 using namespace cv;
 using namespace std;
 
 ArucoDefinedObject::ArucoDefinedObject(SolvePnPMethod method,
-                                       const vector<ArucoMarkerObjectPoints> markers,
-                                       const array<ArucoMarkerWarpedImagePoint, 4> object_corners)
-  : method(method), marker_object_points_(markers)
+                                       const vector<ArucoMarkerObjectPoints>& markers,
+                                       const array<ArucoMarkerWarpedImagePoint, 4>& object_corners)
+  : method(method)
 {
   set_markers(markers, object_corners);
 }
@@ -16,6 +14,8 @@ ArucoDefinedObject::ArucoDefinedObject(SolvePnPMethod method,
 void ArucoDefinedObject::set_markers(const vector<ArucoMarkerObjectPoints>& markers,
                                      const array<ArucoMarkerWarpedImagePoint, 4>& object_corners)
 {
+  marker_object_points_ = markers;
+
   // Find the rectangular bounding box of the object.
   Point2f warp_min = object_corners[0].warped_image_point;
   Point2f warp_max = object_corners[0].warped_image_point;
