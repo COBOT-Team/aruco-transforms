@@ -1,0 +1,4 @@
+aruco_transforms:
+  test: {
+    type: string
+  }
