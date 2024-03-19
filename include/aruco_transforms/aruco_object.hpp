@@ -5,7 +5,6 @@
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Vector3.h>
 
-#include <opencv2/aruco.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/opencv.hpp>
 #include <tuple>
@@ -93,7 +92,7 @@ public:
   bool solve_transform(const std::vector<int>& img_marker_ids,
                        const std::vector<std::vector<cv::Point2f>> img_marker_corners,
                        cv::InputArray camera_matrix, cv::InputArray dist_coeffs,
-                       tf2::Transform& transform, bool invert = false) const;
+                       tf2::Transform& transform, bool invert = true) const;
 
   /**
    * Warp the input image to isolate the object.
@@ -108,11 +107,11 @@ public:
    *                                not detected.
    * @return
    */
-  bool warp_perpective(const cv::Mat& input, cv::Mat& output,
+  bool warp_perspective(const cv::Mat& input, cv::Mat& output,
                        const std::vector<int>& img_marker_ids,
                        const std::vector<std::vector<cv::Point2f>> img_marker_corners,
                        const cv::Size& size, bool fallback = true,
-                       bool outline_on_fallback = true) const;
+                       bool outline_on_fallback = true);
 
   /**
    * Get the correct aspect ratio of the warped image.
@@ -132,7 +131,8 @@ private:
   float warp_aspect_ratio_;
 
   // The most recent warp matrix. Can be used when markers are not detected.
-  std::unique_ptr<cv::Mat> previous_warp_matrix_;
+  bool has_previous_warp_matrix_;
+  cv::Mat previous_warp_matrix_;
 };
 
 #endif

@@ -6,7 +6,8 @@
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
-  ArucoTransformNode node(&ARUCO_CHESSBOARD);
+  ArucoDefinedObject chessboard = aruco_chessboard();
+  ArucoTransformNode node(&chessboard);
   rclcpp::spin(node.get_node());
   rclcpp::shutdown();
   return 0;

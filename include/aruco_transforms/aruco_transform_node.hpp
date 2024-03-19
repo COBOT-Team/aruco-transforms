@@ -22,12 +22,12 @@ public:
    * @param[in] aruco_object The Aruco object to be used for the transform.
    * @param[in] options The node options.
    */
-  explicit ArucoTransformNode(const ArucoDefinedObject* chessboard_aruco_object,
+  explicit ArucoTransformNode(ArucoDefinedObject* chessboard_aruco_object,
                               const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
   /**
    * Get the raw node.
-   * 
+   *
    * @return The raw node.
    */
   rclcpp::Node::SharedPtr get_node() const;
@@ -50,7 +50,7 @@ private:
   std::unique_ptr<image_transport::CameraSubscriber> camera_sub_;
 
   std::unique_ptr<image_transport::Publisher> chessboard_warped_pub_;
-  const ArucoDefinedObject* chessboard_aruco_object_;
+  ArucoDefinedObject* chessboard_aruco_object_;
 
   /**
    * Callback to be called when a new image is received. This will identify the objects in the

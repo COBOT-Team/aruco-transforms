@@ -7,7 +7,7 @@ using namespace aruco_transforms_params;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-ArucoTransformNode::ArucoTransformNode(const ArucoDefinedObject* chessboard_aruco_object,
+ArucoTransformNode::ArucoTransformNode(ArucoDefinedObject* chessboard_aruco_object,
                                        const rclcpp::NodeOptions& options)
   : chessboard_aruco_object_(chessboard_aruco_object)
 {
@@ -27,6 +27,8 @@ ArucoTransformNode::ArucoTransformNode(const ArucoDefinedObject* chessboard_aruc
   auto bound_callback = bind(&ArucoTransformNode::image_callback, this, _1, _2);
   camera_sub_ = make_unique<image_transport::CameraSubscriber>(
     it_->subscribeCamera(params_->camera_base_topic, 1, bound_callback));
+
+  RCLCPP_INFO(get_logger(), "Aruco transform node started");
 }
 
 rclcpp::Node::SharedPtr ArucoTransformNode::get_node() const
@@ -83,7 +85,7 @@ void ArucoTransformNode::image_callback(const sensor_msgs::msg::Image::ConstShar
 
   // Warp the chessboard image.
   cv::Mat warped_chessboard;
-  bool chessboard_warp_success = chessboard_aruco_object_->warp_perpective(
+  bool chessboard_warp_success = chessboard_aruco_object_->warp_perspective(
     cv_ptr->image, warped_chessboard, aruco_ids, aruco_corners,
     cv::Size(params_->warped_chessboard_size, params_->warped_chessboard_size));
   if (chessboard_warp_success) {

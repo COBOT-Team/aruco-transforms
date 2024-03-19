@@ -1,12 +1,14 @@
 #include "aruco_transforms/aruco_object.hpp"
 
+#include <iostream>
+
 using namespace cv;
 using namespace std;
 
 ArucoDefinedObject::ArucoDefinedObject(SolvePnPMethod method,
                                        const vector<ArucoMarkerObjectPoints>& markers,
                                        const array<ArucoMarkerWarpedImagePoint, 4>& object_corners)
-  : method(method)
+  : method(method), has_previous_warp_matrix_(false)
 {
   set_markers(markers, object_corners);
 }
@@ -81,10 +83,10 @@ bool ArucoDefinedObject::solve_transform(const vector<int>& img_marker_ids,
   return true;
 }
 
-bool ArucoDefinedObject::warp_perpective(
+bool ArucoDefinedObject::warp_perspective(
   const Mat& input, Mat& output, const vector<int>& img_marker_ids,
-  const std::vector<std::vector<cv::Point2f>> img_marker_corners, const Size& size,
-  bool fallback = true, bool outline_on_fallback = true) const
+  const vector<vector<Point2f>> img_marker_corners, const Size& size, bool fallback,
+  bool outline_on_fallback)
 {
   // Find the points that correspond to the object.
   vector<Point2f> img_points;
@@ -104,9 +106,10 @@ bool ArucoDefinedObject::warp_perpective(
   bool has_4_points = img_points.size() == 4;
   if (has_4_points) {
     transform = getPerspectiveTransform(img_points, obj_points);
-    *previous_warp_matrix_ = transform;
-  } else if (fallback) {
-    transform = *previous_warp_matrix_;
+    previous_warp_matrix_ = transform.clone();
+    has_previous_warp_matrix_ = true;
+  } else if (fallback && has_previous_warp_matrix_) {
+    transform = previous_warp_matrix_;
   } else {
     return false;
   }
