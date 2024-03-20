@@ -50,6 +50,20 @@ struct ArucoMarkerWarpedImagePoint {
 };
 
 /**
+ * Parameters used to define an object using Aruco markers.
+ */
+struct ArucoDefineObjectParams {
+  // The method used to solve the PnP problem.
+  cv::SolvePnPMethod method;
+
+  // The markers that define the object.
+  std::vector<ArucoMarkerObjectPoints> markers;
+
+  // The 4 corners of the object in object space.
+  std::array<ArucoMarkerWarpedImagePoint, 4> object_corners;
+};
+
+/**
  * An object defined by Aruco markers. This may optionally include four corners of the object,
  * which can be used to create a warp perspective transform.
  */
@@ -62,12 +76,9 @@ public:
   /**
    * Construct a new Aruco-Defined Object.
    *
-   * @param[in] method The method used to solve the PnP problem.
-   * @param[in] markers The markers that define the object.
-   * @param[in] object_corners The 4 corners of the object in object space.
+   * @param[in] params The parameters used to define the object.
    */
-  ArucoDefinedObject(cv::SolvePnPMethod method, const std::vector<ArucoMarkerObjectPoints>& markers,
-                     const std::array<ArucoMarkerWarpedImagePoint, 4>& object_corners);
+  ArucoDefinedObject(const ArucoDefineObjectParams& params);
 
   /**
    * Set the markers and bounding box that define the object.
@@ -108,10 +119,10 @@ public:
    * @return
    */
   bool warp_perspective(const cv::Mat& input, cv::Mat& output,
-                       const std::vector<int>& img_marker_ids,
-                       const std::vector<std::vector<cv::Point2f>> img_marker_corners,
-                       const cv::Size& size, bool fallback = true,
-                       bool outline_on_fallback = true);
+                        const std::vector<int>& img_marker_ids,
+                        const std::vector<std::vector<cv::Point2f>> img_marker_corners,
+                        const cv::Size& size, bool fallback = true,
+                        bool outline_on_fallback = true);
 
   /**
    * Get the correct aspect ratio of the warped image.

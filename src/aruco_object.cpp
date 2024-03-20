@@ -5,12 +5,10 @@
 using namespace cv;
 using namespace std;
 
-ArucoDefinedObject::ArucoDefinedObject(SolvePnPMethod method,
-                                       const vector<ArucoMarkerObjectPoints>& markers,
-                                       const array<ArucoMarkerWarpedImagePoint, 4>& object_corners)
-  : method(method), has_previous_warp_matrix_(false)
+ArucoDefinedObject::ArucoDefinedObject(const ArucoDefineObjectParams& params)
+  : method(params.method), has_previous_warp_matrix_(false)
 {
-  set_markers(markers, object_corners);
+  set_markers(params.markers, params.object_corners);
 }
 
 void ArucoDefinedObject::set_markers(const vector<ArucoMarkerObjectPoints>& markers,
@@ -83,10 +81,10 @@ bool ArucoDefinedObject::solve_transform(const vector<int>& img_marker_ids,
   return true;
 }
 
-bool ArucoDefinedObject::warp_perspective(
-  const Mat& input, Mat& output, const vector<int>& img_marker_ids,
-  const vector<vector<Point2f>> img_marker_corners, const Size& size, bool fallback,
-  bool outline_on_fallback)
+bool ArucoDefinedObject::warp_perspective(const Mat& input, Mat& output,
+                                          const vector<int>& img_marker_ids,
+                                          const vector<vector<Point2f>> img_marker_corners,
+                                          const Size& size, bool fallback, bool outline_on_fallback)
 {
   // Find the points that correspond to the object.
   vector<Point2f> img_points;

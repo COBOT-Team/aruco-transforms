@@ -5,9 +5,6 @@
 
 extern const double ARUCO_SIZE;  // Size of the Aruco marker in meters.
 
-/**
- * Return an ArucoDefinedObject with chessboard data.
- */
-ArucoDefinedObject aruco_chessboard();
+extern const ArucoDefineObjectParams CHESSBOARD_PARAMS;
 
 #endif

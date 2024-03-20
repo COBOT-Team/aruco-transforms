@@ -25,7 +25,7 @@ generate_parameter_library(
 )
 
 add_executable(aruco_transforms
-  src/aruco_transforms.cpp
+  src/main.cpp
   src/aruco_object.cpp
   src/aruco_transform_node.cpp
   src/config.cpp
