@@ -12,7 +12,7 @@ namespace aruco_object_manager
 // ========================================= Chessboard ========================================= //
 //                                                                                                //
 
-const double CHESSBOARD_SIZE = 374.65 / 1000.0;
+const double CHESSBOARD_SIZE = 374.0 / 1000.0;
 const double CHESSBOARD_ARUCO_SIZE = 18.5 / 1000.0;
 const double HALF_CB = CHESSBOARD_SIZE / 2.0;
 
@@ -56,7 +56,7 @@ const double TABLE_OUTER_ARUCO_X = (TABLE_WIDTH / 2) - TABLE_ARUCO_OFFSET - (TAB
 const double TABLE_INNER_ARUCO_X = TABLE_OUTER_ARUCO_X - (400.0 / 1000.0);
 const double TABLE_ARUCO_Y = (TABLE_HEIGHT / 2) - TABLE_ARUCO_OFFSET - (TABLE_ARUCO_SIZE / 2);
 
-const ArucoObjectManager::Params CHESSBOARD_PARAMS = {
+const ArucoObjectManager::Params TABLE_PARAMS = {
   // SolvePnP method.
   SOLVEPNP_IPPE,
 

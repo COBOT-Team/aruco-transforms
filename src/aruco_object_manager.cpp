@@ -78,8 +78,15 @@ void Marker3d::SinglePoint::emplace_points(const vector<Point2f>& img_marker_cor
       img_points.emplace_back(img_marker_corners[i]);
       obj_points.emplace_back(corner_point_ + CORNER_OFFSETS[corner_idx][i] * marker_size_);
     }
-  } else {
+  } else if (corner_ != Corner::CENTER) {
     img_points.emplace_back(img_marker_corners[corner_idx]);
+    obj_points.emplace_back(corner_point_);
+  } else {
+    Point2f img_center(0.0f, 0.0f);
+    for (auto& c : img_marker_corners) {
+      img_center += c * 0.25f;
+    }
+    img_points.emplace_back(img_center);
     obj_points.emplace_back(corner_point_);
   }
 }
@@ -126,7 +133,7 @@ ArucoObjectManager::ArucoObjectManager(
   , object_corners_2d_(aruco_params.object_corners_2d)
 {
   // Calculate the bounding box of the object in the warped image.
-  auto [warp_top_left, warp_top_right] = [&aruco_params]() -> pair<Point2f, Point2f> {
+  auto [warp_top_left, warp_btm_right] = [&aruco_params]() -> pair<Point2f, Point2f> {
     const auto corners = aruco_params.object_corners_2d;
     Point2f tl(corners[0].corner_point);
     Point2f br(corners[0].corner_point);
@@ -140,10 +147,17 @@ ArucoObjectManager::ArucoObjectManager(
     return { tl, br };
   }();
 
+  // Calculate warped image height based on aspect ratio.
+  warped_img_height_ = [&] {
+    const double w = warp_btm_right.x - warp_top_left.x;
+    const double h = warp_btm_right.y - warp_top_left.y;
+    return warped_img_width_ * h / w;
+  }();
+
   // Scale the object corners to the size of the warped image.
   [&] {
-    const double scale_x = 1.0 / (warp_top_right.x - warp_top_left.x);
-    const double scale_y = 1.0 / (warp_top_right.y - warp_top_left.y);
+    const double scale_x = warped_img_width_ / (warp_btm_right.x - warp_top_left.x);
+    const double scale_y = warped_img_height_ / (warp_btm_right.y - warp_top_left.y);
     for (auto& corner : object_corners_2d_) {
       corner.corner_point.x = (corner.corner_point.x - warp_top_left.x) * scale_x;
       corner.corner_point.y = (corner.corner_point.y - warp_top_left.y) * scale_y;
@@ -178,7 +192,7 @@ void ArucoObjectManager::process(const Mat& input_image, const vector<int> marke
   // Warp the input image to isolate the object.
   Mat warped_image;
   const bool warp_success = warp_perspective_(input_image, warped_image, marker_ids, marker_points,
-                                              Size(warped_img_width_, warped_img_width_));
+                                              Size(warped_img_width_, warped_img_height_));
   if (warp_success) {
     std_msgs::msg::Header header;
     header.stamp = now;
@@ -220,8 +234,11 @@ bool ArucoObjectManager::solve_transform_(const vector<int>& img_marker_ids,
     return false;
   }
 
+  // Refine the PnP solution.
+  solvePnPRefineVVS(obj_points, img_points, camera_matrix, dist_coeffs, rvec, tvec);
+
   // Convert the rotation vector to a rotation matrix.
-  Mat rmat(3, 3, CV_64F);
+  Mat rmat;
   Rodrigues(rvec, rmat);
 
   // Convert the rotation and translation vectors to a tf2 transform.
@@ -246,42 +263,62 @@ bool ArucoObjectManager::warp_perspective_(const Mat& input, Mat& output,
                                            const Size& size, bool fallback,
                                            bool outline_on_fallback)
 {
-  // Find matching markers between the image and the object.
+  // // Find matching markers between the image and the object.
+  // vector<Point2f> img_points;
+  // vector<Point2f> obj_points;
+  // for (const auto& obj_corner : object_corners_2d_) {
+  //   const auto aruco_corner_idx = static_cast<size_t>(obj_corner.corner_id);
+  //   auto it = find(img_marker_ids.begin(), img_marker_ids.end(), obj_corner.marker_id);
+  //   if (it != img_marker_ids.end()) {
+  //     const size_t index = distance(img_marker_ids.begin(), it);
+  //     img_points.emplace_back(img_marker_corners[index][aruco_corner_idx]);
+  //     obj_points.emplace_back(obj_corner.corner_point);
+  //   }
+  // }
+
+  // bool has_4_corners = img_points.size() == 4;
+  // if (!has_4_corners && (!fallback || !has_previous_warp_matrix_)) {
+  //   RCLCPP_WARN(get_logger(), "Failed to find all 4 corners. No previous warp matrix
+  //   available.");
+  // }
+
+  // // Calculate the warp matrix.
+  // const Mat warp_matrix = [&] {
+  //   if (has_4_corners) {
+  //     Mat m = getPerspectiveTransform(img_points, obj_points);
+  //     previous_warp_matrix_ = m.clone();
+  //     has_previous_warp_matrix_ = true;
+  //     return m;
+  //   } else {
+  //     return previous_warp_matrix_;
+  //   }
+  // }();
+
+  // // Warp the image.
+  // warpPerspective(input, output, warp_matrix, size);
+
+  // // Draw an outline on the output image if the markers are not detected.
+  // if (!has_4_corners && outline_on_fallback)
+  //   cv::rectangle(output, cv::Point(0, 0), size, cv::Scalar(255, 0, 0), 16);
+
+  // return true;
+
   vector<Point2f> img_points;
-  vector<Point2f> obj_points;
-  for (const auto& obj_corner : object_corners_2d_) {
-    const auto aruco_corner_idx = static_cast<size_t>(obj_corner.corner_id);
-    auto it = find(img_marker_ids.begin(), img_marker_ids.end(), obj_corner.marker_id);
+  vector<Point3d> obj_points;
+  size_t marker_count = 0;
+  for (const auto& marker : markers_) {
+    auto it = find(img_marker_ids.begin(), img_marker_ids.end(), marker.marker_id);
     if (it != img_marker_ids.end()) {
       const size_t index = distance(img_marker_ids.begin(), it);
-      img_points.emplace_back(img_marker_corners[index][aruco_corner_idx]);
-      obj_points.emplace_back(obj_corner.corner_point);
+      marker.location->emplace_points(img_marker_corners[index], img_points, obj_points);
+      ++marker_count;
     }
   }
 
-  bool has_4_corners = img_points.size() == 4;
-  if (!has_4_corners && (!fallback || !has_previous_warp_matrix_)) {
-    RCLCPP_WARN(get_logger(), "Failed to find all 4 corners. No previous warp matrix available.");
+  output = input.clone();
+  for (auto& img_point : img_points) {
+    circle(output, img_point, 2, Scalar(255, 0, 0), 4);
   }
-
-  // Calculate the warp matrix.
-  const Mat warp_matrix = [&] {
-    if (has_4_corners) {
-      Mat m = getPerspectiveTransform(img_points, obj_points);
-      previous_warp_matrix_ = m.clone();
-      has_previous_warp_matrix_ = true;
-      return m;
-    } else {
-      return previous_warp_matrix_;
-    }
-  }();
-
-  // Warp the image.
-  warpPerspective(input, output, warp_matrix, size);
-
-  // Draw an outline on the output image if the markers are not detected.
-  if (!has_4_corners && outline_on_fallback)
-    cv::rectangle(output, cv::Point(0, 0), size, cv::Scalar(255, 0, 0), 16);
 
   return true;
 }

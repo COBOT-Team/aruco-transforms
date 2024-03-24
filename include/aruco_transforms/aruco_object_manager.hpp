@@ -244,6 +244,7 @@ private:
   rclcpp::Node::SharedPtr node_;
   std::string tf_frame_;
   int warped_img_width_;
+  int warped_img_height_;
   bool invert_transform_;
 
   cv::SolvePnPMethod pnp_method_;

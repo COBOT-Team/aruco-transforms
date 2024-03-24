@@ -39,15 +39,18 @@ int main(int argc, char** argv)
   // Chessboard.
   object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it, params.chessboard.frame,
                                                   params.chessboard.warped.topic, CHESSBOARD_PARAMS,
-                                                  params.chessboard.warped.size, true));
+                                                  params.chessboard.warped.size, false));
 
   // Table.
   object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it, params.table.frame,
                                                   params.table.warped.topic, TABLE_PARAMS,
-                                                  params.table.warped.size, false));
+                                                  params.table.warped.width, true));
 
   image_transport::CameraSubscriber camera_sub =
     it.subscribeCamera(params.camera_base_topic, 1, bind(camera_callback, node, _1, _2));
+
+  rclcpp::spin(node);
+  rclcpp::shutdown();
 
   return 0;
 }
@@ -56,6 +59,7 @@ void camera_callback(rclcpp::Node::SharedPtr node,
                      const sensor_msgs::msg::Image::ConstSharedPtr& image_msg,
                      const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info_msg)
 {
+
   // Convert the image to an OpenCV image.
   cv_bridge::CvImagePtr cv_ptr;
   try {
