@@ -21,18 +21,18 @@ const ArucoObjectManager::Params CHESSBOARD_PARAMS = {
   SOLVEPNP_IPPE,
 
   // Minimum number of markers.
-  4,
+  3,
 
   // 3D object markers.
   {
     Marker3d(0, make_shared<Marker3d::SinglePoint>(
-                  Corner::TOP_LEFT, Point3d(-HALF_CB, HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE)),
+                  Corner::TOP_LEFT, Point3d(-HALF_CB, HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE, true)),
     Marker3d(1, make_shared<Marker3d::SinglePoint>(
-                  Corner::TOP_RIGHT, Point3d(HALF_CB, HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE)),
+                  Corner::TOP_RIGHT, Point3d(HALF_CB, HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE, true)),
     Marker3d(2, make_shared<Marker3d::SinglePoint>(
-                  Corner::BOTTOM_RIGHT, Point3d(HALF_CB, -HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE)),
+                  Corner::BOTTOM_RIGHT, Point3d(HALF_CB, -HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE, true)),
     Marker3d(3, make_shared<Marker3d::SinglePoint>(
-                  Corner::BOTTOM_LEFT, Point3d(-HALF_CB, -HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE)),
+                  Corner::BOTTOM_LEFT, Point3d(-HALF_CB, -HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE, true)),
   },
 
   // 2D Warped corners.

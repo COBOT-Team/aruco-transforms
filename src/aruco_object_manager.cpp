@@ -263,62 +263,42 @@ bool ArucoObjectManager::warp_perspective_(const Mat& input, Mat& output,
                                            const Size& size, bool fallback,
                                            bool outline_on_fallback)
 {
-  // // Find matching markers between the image and the object.
-  // vector<Point2f> img_points;
-  // vector<Point2f> obj_points;
-  // for (const auto& obj_corner : object_corners_2d_) {
-  //   const auto aruco_corner_idx = static_cast<size_t>(obj_corner.corner_id);
-  //   auto it = find(img_marker_ids.begin(), img_marker_ids.end(), obj_corner.marker_id);
-  //   if (it != img_marker_ids.end()) {
-  //     const size_t index = distance(img_marker_ids.begin(), it);
-  //     img_points.emplace_back(img_marker_corners[index][aruco_corner_idx]);
-  //     obj_points.emplace_back(obj_corner.corner_point);
-  //   }
-  // }
-
-  // bool has_4_corners = img_points.size() == 4;
-  // if (!has_4_corners && (!fallback || !has_previous_warp_matrix_)) {
-  //   RCLCPP_WARN(get_logger(), "Failed to find all 4 corners. No previous warp matrix
-  //   available.");
-  // }
-
-  // // Calculate the warp matrix.
-  // const Mat warp_matrix = [&] {
-  //   if (has_4_corners) {
-  //     Mat m = getPerspectiveTransform(img_points, obj_points);
-  //     previous_warp_matrix_ = m.clone();
-  //     has_previous_warp_matrix_ = true;
-  //     return m;
-  //   } else {
-  //     return previous_warp_matrix_;
-  //   }
-  // }();
-
-  // // Warp the image.
-  // warpPerspective(input, output, warp_matrix, size);
-
-  // // Draw an outline on the output image if the markers are not detected.
-  // if (!has_4_corners && outline_on_fallback)
-  //   cv::rectangle(output, cv::Point(0, 0), size, cv::Scalar(255, 0, 0), 16);
-
-  // return true;
-
+  // Find matching markers between the image and the object.
   vector<Point2f> img_points;
-  vector<Point3d> obj_points;
-  size_t marker_count = 0;
-  for (const auto& marker : markers_) {
-    auto it = find(img_marker_ids.begin(), img_marker_ids.end(), marker.marker_id);
+  vector<Point2f> obj_points;
+  for (const auto& obj_corner : object_corners_2d_) {
+    const auto aruco_corner_idx = static_cast<size_t>(obj_corner.corner_id);
+    auto it = find(img_marker_ids.begin(), img_marker_ids.end(), obj_corner.marker_id);
     if (it != img_marker_ids.end()) {
       const size_t index = distance(img_marker_ids.begin(), it);
-      marker.location->emplace_points(img_marker_corners[index], img_points, obj_points);
-      ++marker_count;
+      img_points.emplace_back(img_marker_corners[index][aruco_corner_idx]);
+      obj_points.emplace_back(obj_corner.corner_point);
     }
   }
 
-  output = input.clone();
-  for (auto& img_point : img_points) {
-    circle(output, img_point, 2, Scalar(255, 0, 0), 4);
+  bool has_4_corners = img_points.size() == 4;
+  if (!has_4_corners && (!fallback || !has_previous_warp_matrix_)) {
+    RCLCPP_WARN(get_logger(), "Failed to find all 4 corners. No previous warp matrix available.");
   }
+
+  // Calculate the warp matrix.
+  const Mat warp_matrix = [&] {
+    if (has_4_corners) {
+      Mat m = getPerspectiveTransform(img_points, obj_points);
+      previous_warp_matrix_ = m.clone();
+      has_previous_warp_matrix_ = true;
+      return m;
+    } else {
+      return previous_warp_matrix_;
+    }
+  }();
+
+  // Warp the image.
+  warpPerspective(input, output, warp_matrix, size);
+
+  // Draw an outline on the output image if the markers are not detected.
+  if (!has_4_corners && outline_on_fallback)
+    cv::rectangle(output, cv::Point(0, 0), size, cv::Scalar(255, 0, 0), 16);
 
   return true;
 }
