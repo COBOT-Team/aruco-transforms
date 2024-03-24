@@ -7,7 +7,7 @@ namespace aruco_object_manager
 {
 
 extern const ArucoObjectManager::Params CHESSBOARD_PARAMS;
-// const ArucoObjectManager::Params TABLE_PARAMS;
+extern const ArucoObjectManager::Params TABLE_PARAMS;
 
 };  // namespace aruco_object_manager
 #endif

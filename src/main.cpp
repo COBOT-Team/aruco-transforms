@@ -42,7 +42,9 @@ int main(int argc, char** argv)
                                                   params.chessboard.warped.size, true));
 
   // Table.
-  // TODO: Add table object manager.
+  object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it, params.table.frame,
+                                                  params.table.warped.topic, TABLE_PARAMS,
+                                                  params.table.warped.size, false));
 
   image_transport::CameraSubscriber camera_sub =
     it.subscribeCamera(params.camera_base_topic, 1, bind(camera_callback, node, _1, _2));
@@ -70,9 +72,8 @@ void camera_callback(rclcpp::Node::SharedPtr node,
 
   // Find the Aruco markers in the image.
   static const auto aruco_detector_params = cv::aruco::DetectorParameters();
-  static const auto aruco_dictionary =
-  cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50); static const
-  cv::aruco::ArucoDetector aruco_detector(aruco_dictionary, aruco_detector_params);
+  static const auto aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+  static const cv::aruco::ArucoDetector aruco_detector(aruco_dictionary, aruco_detector_params);
   vector<int> aruco_ids;
   vector<vector<cv::Point2f>> aruco_corners;
   aruco_detector.detectMarkers(cv_ptr->image, aruco_corners, aruco_ids);

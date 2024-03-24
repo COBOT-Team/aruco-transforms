@@ -24,5 +24,22 @@ aruco_transforms_params:
         {
           type: int,
           default_value: 512,
-          description: "The size of the warped chessboard in pixels.",
+          description: "The size of the warped chessboard image in pixels.",
+        }
+
+  table:
+    frame:
+      { type: string, default_value: "table_frame", description: "The TF2 frame_id of the table." }
+    warped:
+      topic:
+        {
+          type: string,
+          default_value: "table/image_raw",
+          description: "The base topic to publish warped images of the table to.",
+        }
+      width:
+        {
+          type: int,
+          default_value: 1024,
+          description: "The width of the warped table image in pixels.",
         }
