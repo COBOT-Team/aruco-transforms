@@ -6,44 +6,40 @@ aruco_transforms_params:
       description: "The base topic of the camera publisher that contains the chessboard image.",
     }
 
-  warped_chessboard_topic:
-    {
-      type: string,
-      default_value: "chessboard/image_raw",
-      description: "The base topic to publish warped images of the chessboard to.",
-    }
+  chessboard:
+    frame:
+      {
+        type: string,
+        default_value: "chessboard_frame",
+        description: "The TF2 frame_id of the chessboard.",
+      }
+    warped:
+      topic:
+        {
+          type: string,
+          default_value: "chessboard/image_raw",
+          description: "The base topic to publish warped images of the chessboard to.",
+        }
+      size:
+        {
+          type: int,
+          default_value: 512,
+          description: "The size of the warped chessboard image in pixels.",
+        }
 
-  warped_chessboard_size:
-    {
-      type: int,
-      default_value: 512,
-      description: "The size of the warped chessboard in pixels.",
-    }
-
-  chessboard_frame:
-    {
-      type: string,
-      default_value: "chessboard_frame",
-      description: "The TF2 frame_id of the chessboard.",
-    }
-
-  warped_table_topic:
-    {
-      type: string,
-      default_value: "table/image_raw",
-      description: "The base topic to publish warped images of the table to.",
-    }
-
-  warped_table_width:
-    {
-      type: int,
-      default_value: 1024,
-      description: "The width of the warped table in pixels.",
-    }
-
-  table_frame:
-    {
-      type: string,
-      default_value: "table_frame",
-      description: "The TF2 frame_id of the table.",
-    }
+  table:
+    frame:
+      { type: string, default_value: "table_frame", description: "The TF2 frame_id of the table." }
+    warped:
+      topic:
+        {
+          type: string,
+          default_value: "table/image_raw",
+          description: "The base topic to publish warped images of the table to.",
+        }
+      width:
+        {
+          type: int,
+          default_value: 1024,
+          description: "The width of the warped table image in pixels.",
+        }
