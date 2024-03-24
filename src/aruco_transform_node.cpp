@@ -8,8 +8,9 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 ArucoTransformNode::ArucoTransformNode(ArucoDefinedObject* chessboard_aruco_object,
+                                       ArucoDefinedObject* table_aruco_object,
                                        const rclcpp::NodeOptions& options)
-  : chessboard_aruco_object_(chessboard_aruco_object)
+  : chessboard_aruco_object_(chessboard_aruco_object), table_aruco_object_(table_aruco_object)
 {
   node_ = make_shared<rclcpp::Node>("aruco_transforms", options);
   param_listener_ = make_unique<ParamListener>(node_);
@@ -22,6 +23,8 @@ ArucoTransformNode::ArucoTransformNode(ArucoDefinedObject* chessboard_aruco_obje
   it_ = make_unique<image_transport::ImageTransport>(node_);
   chessboard_warped_pub_ =
     make_unique<image_transport::Publisher>(it_->advertise(params_->warped_chessboard_topic, 1));
+  table_warped_pub_ =
+    make_unique<image_transport::Publisher>(it_->advertise(params_->warped_table_topic, 1));
 
   // Initialize the camera subscriber.
   auto bound_callback = bind(&ArucoTransformNode::image_callback, this, _1, _2);
@@ -68,17 +71,19 @@ void ArucoTransformNode::image_callback(const sensor_msgs::msg::Image::ConstShar
   vector<vector<cv::Point2f>> aruco_corners;
   aruco_detector.detectMarkers(cv_ptr->image, aruco_corners, aruco_ids);
 
+  vector<geometry_msgs::msg::TransformStamped> transforms;
+
   // Solve the chessboard transform.
   tf2::Transform chessboard_transform;
   bool chessboard_tf_success = chessboard_aruco_object_->solve_transform(
-    aruco_ids, aruco_corners, camera_matrix, dist_coeffs, chessboard_transform, true);
+    aruco_ids, aruco_corners, camera_matrix, dist_coeffs, chessboard_transform, false);
   if (chessboard_tf_success) {
     geometry_msgs::msg::TransformStamped tf_stamped;
     tf_stamped.header.stamp = now;
-    tf_stamped.header.frame_id = params_->chessboard_frame;
-    tf_stamped.child_frame_id = camera_frame;
+    tf_stamped.header.frame_id = camera_frame;
+    tf_stamped.child_frame_id = params_->chessboard_frame;
     tf_stamped.transform = tf2::toMsg(chessboard_transform);
-    tf_broadcaster_->sendTransform(tf_stamped);
+    transforms.emplace_back(tf_stamped);
   } else {
     RCLCPP_ERROR(get_logger(), "Failed to solve chessboard transform.");
   }
@@ -99,4 +104,39 @@ void ArucoTransformNode::image_callback(const sensor_msgs::msg::Image::ConstShar
   } else {
     RCLCPP_ERROR(get_logger(), "Failed to warp chessboard image.");
   }
+
+  // Solve the table transform.
+  tf2::Transform table_transform;
+  bool table_tf_success = table_aruco_object_->solve_transform(
+    aruco_ids, aruco_corners, camera_matrix, dist_coeffs, table_transform, true);
+  if (table_tf_success) {
+    geometry_msgs::msg::TransformStamped tf_stamped;
+    tf_stamped.header.stamp = now;
+    tf_stamped.header.frame_id = params_->table_frame;
+    tf_stamped.child_frame_id = camera_frame;
+    tf_stamped.transform = tf2::toMsg(table_transform);
+    transforms.emplace_back(tf_stamped);
+  } else {
+    RCLCPP_ERROR(get_logger(), "Failed to solve table transform.");
+  }
+
+  // Warp the table image.
+  cv::Mat warped_table;
+  bool table_warp_success = table_aruco_object_->warp_perspective(
+    cv_ptr->image, warped_table, aruco_ids, aruco_corners,
+    cv::Size(params_->warped_table_width,
+             params_->warped_table_width / table_aruco_object_->get_warp_aspect_ratio()));
+  if (table_warp_success) {
+    std_msgs::msg::Header header;
+    header.stamp = now;
+    header.frame_id = camera_frame;
+    sensor_msgs::msg::Image::SharedPtr warped_table_msg =
+      cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, warped_table).toImageMsg();
+    table_warped_pub_->publish(warped_table_msg);
+  } else {
+    RCLCPP_ERROR(get_logger(), "Failed to warp table image.");
+  }
+
+  // Publish transforms.
+  if (!transforms.empty()) tf_broadcaster_->sendTransform(transforms);
 }

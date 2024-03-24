@@ -5,7 +5,7 @@
 using namespace cv;
 using namespace std;
 
-ArucoDefinedObject::ArucoDefinedObject(const ArucoDefineObjectParams& params)
+ArucoDefinedObject::ArucoDefinedObject(const ArucoDefinedObjectParams& params)
   : method(params.method), has_previous_warp_matrix_(false)
 {
   set_markers(params.markers, params.object_corners);
@@ -55,12 +55,16 @@ bool ArucoDefinedObject::solve_transform(const vector<int>& img_marker_ids,
     auto it = find(img_marker_ids.begin(), img_marker_ids.end(), marker.id);
     if (it != img_marker_ids.end()) {
       size_t index = distance(img_marker_ids.begin(), it);
+      Point2f img_center(0.f, 0.f);
       for (size_t i = 0; i < 4; i++) {
-        img_points.emplace_back(img_marker_corners[index][i]);
-        obj_points.emplace_back(marker.object_points[i]);
+        img_center += img_marker_corners[index][i] * 0.25f;
       }
+      img_points.emplace_back(img_center);
+      obj_points.emplace_back(marker.center);
     }
   }
+
+  if (img_points.size() < 4) return false;
 
   // Try to solve the PnP problem.
   Vec3d rvec, tvec;

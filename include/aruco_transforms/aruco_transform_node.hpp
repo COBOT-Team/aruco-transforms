@@ -23,6 +23,7 @@ public:
    * @param[in] options The node options.
    */
   explicit ArucoTransformNode(ArucoDefinedObject* chessboard_aruco_object,
+                              ArucoDefinedObject* table_aruco_object,
                               const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
   /**
@@ -51,6 +52,9 @@ private:
 
   std::unique_ptr<image_transport::Publisher> chessboard_warped_pub_;
   ArucoDefinedObject* chessboard_aruco_object_;
+
+  std::unique_ptr<image_transport::Publisher> table_warped_pub_;
+  ArucoDefinedObject* table_aruco_object_;
 
   /**
    * Callback to be called when a new image is received. This will identify the objects in the

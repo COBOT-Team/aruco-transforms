@@ -3,8 +3,7 @@
 
 #include "aruco_transforms/aruco_object.hpp"
 
-extern const double ARUCO_SIZE;  // Size of the Aruco marker in meters.
-
-extern const ArucoDefineObjectParams CHESSBOARD_PARAMS;
+extern const ArucoDefinedObjectParams CHESSBOARD_PARAMS;
+extern const ArucoDefinedObjectParams TABLE_PARAMS;
 
 #endif

@@ -23,8 +23,8 @@ struct ArucoMarkerObjectPoints {
   // The ID of the marker.
   int id;
 
-  // The corners of the marker in the object space.
-  std::array<cv::Point3d, 4> object_points;
+  // The center of the marker in object space.
+  cv::Point3d center;
 };
 
 /**
@@ -52,7 +52,7 @@ struct ArucoMarkerWarpedImagePoint {
 /**
  * Parameters used to define an object using Aruco markers.
  */
-struct ArucoDefineObjectParams {
+struct ArucoDefinedObjectParams {
   // The method used to solve the PnP problem.
   cv::SolvePnPMethod method;
 
@@ -78,7 +78,7 @@ public:
    *
    * @param[in] params The parameters used to define the object.
    */
-  ArucoDefinedObject(const ArucoDefineObjectParams& params);
+  ArucoDefinedObject(const ArucoDefinedObjectParams& params);
 
   /**
    * Set the markers and bounding box that define the object.

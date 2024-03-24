@@ -26,3 +26,24 @@ aruco_transforms_params:
       default_value: "chessboard_frame",
       description: "The TF2 frame_id of the chessboard.",
     }
+
+  warped_table_topic:
+    {
+      type: string,
+      default_value: "table/image_raw",
+      description: "The base topic to publish warped images of the table to.",
+    }
+
+  warped_table_width:
+    {
+      type: int,
+      default_value: 1024,
+      description: "The width of the warped table in pixels.",
+    }
+
+  table_frame:
+    {
+      type: string,
+      default_value: "table_frame",
+      description: "The TF2 frame_id of the table.",
+    }
