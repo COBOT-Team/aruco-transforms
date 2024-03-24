@@ -2,85 +2,46 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "aruco_transforms/aruco_object.hpp"
+using namespace cv;
+using namespace std;
+
+namespace aruco_object_manager
+{
 
 //                                                                                                //
 // ========================================= Chessboard ========================================= //
 //                                                                                                //
 
 const double CHESSBOARD_SIZE = 374.65 / 1000.0;
-const double ARUCO_SIZE = 18.5 / 1000.0;
+const double CHESSBOARD_ARUCO_SIZE = 18.5 / 1000.0;
+const double HALF_CB = CHESSBOARD_SIZE / 2.0;
 
-const double HALF_CB = CHESSBOARD_SIZE / 2.0;  // Half the size of the chessboard in meters.
-
-const ArucoDefineObjectParams CHESSBOARD_PARAMS = {
-
+const ArucoObjectManager::Params CHESSBOARD_PARAMS = {
   // SolvePnP method.
-  cv::SOLVEPNP_IPPE,
+  SOLVEPNP_IPPE,
 
-  // Object points.
+  // Minimum number of markers.
+  4,
+
+  // 3D object markers.
   {
-    {
-      0,
-      {
-        cv::Point3d(-HALF_CB, HALF_CB, 0.0),
-        cv::Point3d(-HALF_CB + ARUCO_SIZE, HALF_CB, 0.0),
-        cv::Point3d(-HALF_CB + ARUCO_SIZE, HALF_CB - ARUCO_SIZE, 0.0),
-        cv::Point3d(-HALF_CB, HALF_CB - ARUCO_SIZE, 0.0),
-      },
-    },
-    {
-      1,
-      {
-        cv::Point3d(HALF_CB - ARUCO_SIZE, HALF_CB, 0.0),
-        cv::Point3d(HALF_CB, HALF_CB, 0.0),
-        cv::Point3d(HALF_CB, HALF_CB - ARUCO_SIZE, 0.0),
-        cv::Point3d(HALF_CB - ARUCO_SIZE, HALF_CB - ARUCO_SIZE, 0.0),
-      },
-    },
-    {
-      2,
-      {
-        cv::Point3d(HALF_CB - ARUCO_SIZE, -HALF_CB + ARUCO_SIZE, 0.0),
-        cv::Point3d(HALF_CB, -HALF_CB + ARUCO_SIZE, 0.0),
-        cv::Point3d(HALF_CB, -HALF_CB, 0.0),
-        cv::Point3d(HALF_CB - ARUCO_SIZE, -HALF_CB, 0.0),
-      },
-    },
-    {
-      3,
-      {
-        cv::Point3d(-HALF_CB, -HALF_CB + ARUCO_SIZE, 0.0),
-        cv::Point3d(-HALF_CB + ARUCO_SIZE, -HALF_CB + ARUCO_SIZE, 0.0),
-        cv::Point3d(-HALF_CB + ARUCO_SIZE, -HALF_CB, 0.0),
-        cv::Point3d(-HALF_CB, -HALF_CB, 0.0),
-      },
-    },
+    Marker3d(0, make_shared<Marker3d::SinglePoint>(
+                  Corner::TOP_LEFT, Point3d(-HALF_CB, HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE)),
+    Marker3d(1, make_shared<Marker3d::SinglePoint>(
+                  Corner::TOP_RIGHT, Point3d(HALF_CB, HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE)),
+    Marker3d(2, make_shared<Marker3d::SinglePoint>(
+                  Corner::BOTTOM_RIGHT, Point3d(HALF_CB, -HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE)),
+    Marker3d(3, make_shared<Marker3d::SinglePoint>(
+                  Corner::BOTTOM_LEFT, Point3d(-HALF_CB, -HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE)),
   },
 
-  //  Warped image points.
+  // 2D Warped corners.
   { {
-    {
-      0,
-      0,
-      cv::Point2f(0.0, 0.0),
-    },
-    {
-      1,
-      1,
-      cv::Point2f(1.0, 0.0),
-    },
-    {
-      2,
-      2,
-      cv::Point2f(1.0, 1.0),
-    },
-    {
-      3,
-      3,
-      cv::Point2f(0.0, 1.0),
-    },
-  } }
+    Marker2d(0, Corner::TOP_LEFT, Point2f(0, 0)),
+    Marker2d(1, Corner::TOP_RIGHT, Point2f(CHESSBOARD_SIZE, 0)),
+    Marker2d(2, Corner::BOTTOM_RIGHT, Point2f(CHESSBOARD_SIZE, CHESSBOARD_SIZE)),
+    Marker2d(3, Corner::BOTTOM_LEFT, Point2f(0, CHESSBOARD_SIZE)),
+  } },
 };
 
 //                                                                                                //
@@ -89,3 +50,5 @@ const ArucoDefineObjectParams CHESSBOARD_PARAMS = {
 //                                                                                                //
 
 // TODO: Define the Aruco-defined table.
+
+};  // namespace aruco_object_manager

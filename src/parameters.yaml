@@ -6,23 +6,23 @@ aruco_transforms_params:
       description: "The base topic of the camera publisher that contains the chessboard image.",
     }
 
-  warped_chessboard_topic:
-    {
-      type: string,
-      default_value: "chessboard/image_raw",
-      description: "The base topic to publish warped images of the chessboard to.",
-    }
-
-  warped_chessboard_size:
-    {
-      type: int,
-      default_value: 512,
-      description: "The size of the warped chessboard in pixels.",
-    }
-
-  chessboard_frame:
-    {
-      type: string,
-      default_value: "chessboard_frame",
-      description: "The TF2 frame_id of the chessboard.",
-    }
+  chessboard:
+    frame:
+      {
+        type: string,
+        default_value: "chessboard_frame",
+        description: "The TF2 frame_id of the chessboard.",
+      }
+    warped:
+      topic:
+        {
+          type: string,
+          default_value: "chessboard/image_raw",
+          description: "The base topic to publish warped images of the chessboard to.",
+        }
+      size:
+        {
+          type: int,
+          default_value: 512,
+          description: "The size of the warped chessboard in pixels.",
+        }

@@ -1,10 +1,13 @@
 #ifndef ARUCO_TRANSFORMS__CONFIG_HPP_
 #define ARUCO_TRANSFORMS__CONFIG_HPP_
 
-#include "aruco_transforms/aruco_object.hpp"
+#include "aruco_transforms/aruco_object_manager.hpp"
 
-extern const double ARUCO_SIZE;  // Size of the Aruco marker in meters.
+namespace aruco_object_manager
+{
 
-extern const ArucoDefineObjectParams CHESSBOARD_PARAMS;
+extern const ArucoObjectManager::Params CHESSBOARD_PARAMS;
+// const ArucoObjectManager::Params TABLE_PARAMS;
 
+};  // namespace aruco_object_manager
 #endif
