@@ -278,7 +278,6 @@ bool ArucoObjectManager::warp_perspective_(const Mat& input, Mat& output,
 
   bool has_4_corners = img_points.size() == 4;
   if (!has_4_corners && (!fallback || !has_previous_warp_matrix_)) {
-    RCLCPP_WARN(get_logger(), "Failed to find all 4 corners. No previous warp matrix available.");
     return false;
   }
 
