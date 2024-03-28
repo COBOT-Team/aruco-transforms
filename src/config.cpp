@@ -117,8 +117,8 @@ const ArucoObjectManager::Params COBOT0_EEF_PARAMS = {
 
   // 3D object markers.
   {
-    Marker3d(0, make_shared<Marker3d::SinglePoint>(Corner::CENTER, Point3d(0.0, 0.0, 0.0),
-                                                   COBOT0_EEF_ARUCO_SIZE, true)),
+    Marker3d(12, make_shared<Marker3d::SinglePoint>(Corner::CENTER, Point3d(0.0, 0.0, 0.0),
+                                                    COBOT0_EEF_ARUCO_SIZE, true)),
   },
 
   // 2D Warped corners. (Unused)
