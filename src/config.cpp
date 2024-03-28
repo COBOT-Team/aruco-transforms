@@ -29,10 +29,12 @@ const ArucoObjectManager::Params CHESSBOARD_PARAMS = {
                   Corner::TOP_LEFT, Point3d(-HALF_CB, HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE, true)),
     Marker3d(1, make_shared<Marker3d::SinglePoint>(
                   Corner::TOP_RIGHT, Point3d(HALF_CB, HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE, true)),
-    Marker3d(2, make_shared<Marker3d::SinglePoint>(
-                  Corner::BOTTOM_RIGHT, Point3d(HALF_CB, -HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE, true)),
-    Marker3d(3, make_shared<Marker3d::SinglePoint>(
-                  Corner::BOTTOM_LEFT, Point3d(-HALF_CB, -HALF_CB, 0.0), CHESSBOARD_ARUCO_SIZE, true)),
+    Marker3d(2, make_shared<Marker3d::SinglePoint>(Corner::BOTTOM_RIGHT,
+                                                   Point3d(HALF_CB, -HALF_CB, 0.0),
+                                                   CHESSBOARD_ARUCO_SIZE, true)),
+    Marker3d(3, make_shared<Marker3d::SinglePoint>(Corner::BOTTOM_LEFT,
+                                                   Point3d(-HALF_CB, -HALF_CB, 0.0),
+                                                   CHESSBOARD_ARUCO_SIZE, true)),
   },
 
   // 2D Warped corners.
@@ -97,6 +99,35 @@ const ArucoObjectManager::Params TABLE_PARAMS = {
     Marker2d(7, Corner::TOP_RIGHT, Point2f(TABLE_WIDTH, 0)),
     Marker2d(8, Corner::BOTTOM_RIGHT, Point2f(TABLE_WIDTH, TABLE_HEIGHT)),
     Marker2d(11, Corner::BOTTOM_LEFT, Point2f(0, TABLE_HEIGHT)),
+  } },
+};
+
+//                                                                                                //
+// ==================================== Cobot0 End Effector ===================================== //
+//                                                                                                //
+
+const double COBOT0_EEF_ARUCO_SIZE = 30.0 / 1000.0;
+
+const ArucoObjectManager::Params COBOT0_EEF_PARAMS = {
+  // SolvePnP method.
+  SOLVEPNP_IPPE_SQUARE,
+
+  // Minimum number of markers.
+  1,
+
+  // 3D object markers.
+  {
+    Marker3d(0, make_shared<Marker3d::SinglePoint>(Corner::CENTER, Point3d(0.0, 0.0, 0.0),
+                                                   COBOT0_EEF_ARUCO_SIZE, true)),
+  },
+
+  // 2D Warped corners. (Unused)
+  // TODO: Support params without this.
+  { {
+    Marker2d(0, Corner::TOP_LEFT, Point2f(0, 0)),
+    Marker2d(0, Corner::TOP_RIGHT, Point2f(COBOT0_EEF_ARUCO_SIZE, 0)),
+    Marker2d(0, Corner::BOTTOM_RIGHT, Point2f(COBOT0_EEF_ARUCO_SIZE, COBOT0_EEF_ARUCO_SIZE)),
+    Marker2d(0, Corner::BOTTOM_LEFT, Point2f(0, COBOT0_EEF_ARUCO_SIZE)),
   } },
 };
 

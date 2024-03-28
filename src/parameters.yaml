@@ -43,3 +43,11 @@ aruco_transforms_params:
           default_value: 1024,
           description: "The width of the warped table image in pixels.",
         }
+
+  cobot0_eef:
+    pose_topic:
+      {
+        type: string,
+        default_value: "cobot0/eef_pose",
+        description: "The topic to publish the pose of cobot0's end effector to.",
+      }

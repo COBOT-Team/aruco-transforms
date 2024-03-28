@@ -131,6 +131,8 @@ ArucoObjectManager::ArucoObjectManager(
   , markers_(aruco_params.markers)
   , min_markers_(aruco_params.min_markers)
   , object_corners_2d_(aruco_params.object_corners_2d)
+  , pose_pub_(nullptr)
+  , pose_topic_("")
 {
   // Calculate the bounding box of the object in the warped image.
   auto [warp_top_left, warp_btm_right] = [&aruco_params]() -> pair<Point2f, Point2f> {
@@ -169,6 +171,22 @@ ArucoObjectManager::ArucoObjectManager(
     make_unique<image_transport::Publisher>(image_transport.advertise(warped_image_topic, 1));
 }
 
+ArucoObjectManager::ArucoObjectManager(rclcpp::Node::SharedPtr node, const string& pose_topic,
+                                       const Params& aruco_params)
+  : node_(node)
+  , pose_topic_(pose_topic)
+  , pnp_method_(aruco_params.method)
+  , markers_(aruco_params.markers)
+  , min_markers_(aruco_params.min_markers)
+  , object_corners_2d_(aruco_params.object_corners_2d)
+  , tf_broadcaster_(nullptr)
+  , tf_frame_("")
+  , warped_img_pub_(nullptr)
+{
+  // Setup the pose publisher.
+  pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(pose_topic, 1);
+}
+
 void ArucoObjectManager::process(const Mat& input_image, const vector<int> marker_ids,
                                  const vector<vector<Point2f>> marker_points,
                                  const string& camera_frame, const Mat& camera_matrix,
@@ -177,28 +195,46 @@ void ArucoObjectManager::process(const Mat& input_image, const vector<int> marke
   const auto now = rclcpp::Clock().now();
 
   // Solve the transform between the camera and the object.
-  tf2::Transform transform;
-  const bool tf_success = solve_transform_(marker_ids, marker_points, camera_matrix, dist_coeffs,
-                                           transform, invert_transform_);
-  if (tf_success) {
-    TransformStamped tf_msg;
-    tf_msg.header.stamp = now;
-    tf_msg.header.frame_id = invert_transform_ ? tf_frame_ : camera_frame;
-    tf_msg.child_frame_id = invert_transform_ ? camera_frame : tf_frame_;
-    tf_msg.transform = tf2::toMsg(transform);
-    tf_broadcaster_->sendTransform(tf_msg);
+  if (tf_broadcaster_ || pose_pub_) {
+    tf2::Transform transform;
+    const bool tf_success = solve_transform_(marker_ids, marker_points, camera_matrix, dist_coeffs,
+                                             transform, invert_transform_);
+    if (tf_success) {
+      if (tf_broadcaster_) {
+        TransformStamped tf_msg;
+        tf_msg.header.stamp = now;
+        tf_msg.header.frame_id = invert_transform_ ? tf_frame_ : camera_frame;
+        tf_msg.child_frame_id = invert_transform_ ? camera_frame : tf_frame_;
+        tf_msg.transform = tf2::toMsg(transform);
+        tf_broadcaster_->sendTransform(tf_msg);
+      }
+
+      if (pose_pub_) {
+        geometry_msgs::msg::PoseStamped pose_msg;
+        pose_msg.header.stamp = now;
+        pose_msg.header.frame_id = camera_frame;
+        pose_msg.pose.position.x = transform.getOrigin().x();
+        pose_msg.pose.position.y = transform.getOrigin().y();
+        pose_msg.pose.position.z = transform.getOrigin().z();
+        pose_msg.pose.orientation = tf2::toMsg(transform.getRotation());
+        pose_pub_->publish(pose_msg);
+      }
+    }
   }
 
   // Warp the input image to isolate the object.
-  Mat warped_image;
-  const bool warp_success = warp_perspective_(input_image, warped_image, marker_ids, marker_points,
-                                              Size(warped_img_width_, warped_img_height_));
-  if (warp_success) {
-    std_msgs::msg::Header header;
-    header.stamp = now;
-    const auto warped_image_msg =
-      cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, warped_image).toImageMsg();
-    warped_img_pub_->publish(warped_image_msg);
+  if (warped_img_pub_) {
+    Mat warped_image;
+    const bool warp_success =
+      warp_perspective_(input_image, warped_image, marker_ids, marker_points,
+                        Size(warped_img_width_, warped_img_height_));
+    if (warp_success) {
+      std_msgs::msg::Header header;
+      header.stamp = now;
+      const auto warped_image_msg =
+        cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, warped_image).toImageMsg();
+      warped_img_pub_->publish(warped_image_msg);
+    }
   }
 }
 

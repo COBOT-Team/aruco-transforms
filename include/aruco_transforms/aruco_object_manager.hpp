@@ -8,6 +8,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <aruco_transforms_params.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <image_transport/image_transport.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -162,7 +163,7 @@ public:
   };
 
   /**
-   * Construct a new Aruco Object Manager object.
+   * Construct a new Aruco Object Manager object that publishes a TF2 transform and a warped image.
    *
    * @param[in] node The node to attach to.
    * @param[in] transform_broadcaster The TF broadcaster to use for publishing transforms.
@@ -179,6 +180,17 @@ public:
                               const std::string& tf_frame, const std::string& warped_image_topic,
                               const Params& aruco_params, int warped_img_width,
                               bool invert_transform = false);
+
+  /**
+   * Construct a new Aruco Object Manager object that publishes a PoseStamped message relative to
+   * the camera.
+   *
+   * @param[in] node The node to attach to.
+   * @param[in] pose_topic The topic to publish the pose to.
+   * @param[in] aruco_params The parameters for the Aruco object.
+   */
+  explicit ArucoObjectManager(rclcpp::Node::SharedPtr node, const std::string& pose_topic,
+                              const Params& aruco_params);
 
   /**
    * Process a new image. This will solve the transform between the camera and the object, and warp
@@ -243,6 +255,7 @@ private:
 
   rclcpp::Node::SharedPtr node_;
   std::string tf_frame_;
+  std::string pose_topic_;
   int warped_img_width_;
   int warped_img_height_;
   bool invert_transform_;
@@ -255,6 +268,7 @@ private:
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   std::unique_ptr<image_transport::Publisher> warped_img_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
 
   // The most recent warp matrix. Used when markers are not detected.
   bool has_previous_warp_matrix_ = false;

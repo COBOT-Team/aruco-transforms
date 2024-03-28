@@ -46,6 +46,10 @@ int main(int argc, char** argv)
                                                   params.table.warped.topic, TABLE_PARAMS,
                                                   params.table.warped.width, true));
 
+  // Cobot0 end effector.
+  object_managers.emplace_back(
+    ArucoObjectManager(node, params.cobot0_eef.pose_topic, COBOT0_EEF_PARAMS));
+
   image_transport::CameraSubscriber camera_sub =
     it.subscribeCamera(params.camera_base_topic, 1, bind(camera_callback, node, _1, _2));
 
@@ -59,7 +63,6 @@ void camera_callback(rclcpp::Node::SharedPtr node,
                      const sensor_msgs::msg::Image::ConstSharedPtr& image_msg,
                      const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info_msg)
 {
-
   // Convert the image to an OpenCV image.
   cv_bridge::CvImagePtr cv_ptr;
   try {
