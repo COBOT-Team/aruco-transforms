@@ -182,6 +182,7 @@ ArucoObjectManager::ArucoObjectManager(rclcpp::Node::SharedPtr node, const strin
   , tf_broadcaster_(nullptr)
   , tf_frame_("")
   , warped_img_pub_(nullptr)
+  , invert_transform_(false)
 {
   // Setup the pose publisher.
   pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(pose_topic, 1);

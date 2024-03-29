@@ -37,9 +37,13 @@ int main(int argc, char** argv)
   auto tf_broadcaster = make_shared<tf2_ros::TransformBroadcaster>(node);
 
   // Chessboard.
-  object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it, params.chessboard.frame,
-                                                  params.chessboard.warped.topic, CHESSBOARD_PARAMS,
+  object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it,
+  params.chessboard.frame,
+                                                  params.chessboard.warped.topic,
+                                                  CHESSBOARD_PARAMS,
                                                   params.chessboard.warped.size, false));
+  // object_managers.emplace_back(
+  //   ArucoObjectManager(node, params.cobot0_eef.pose_topic, CHESSBOARD_PARAMS));
 
   // Table.
   object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it, params.table.frame,
@@ -84,6 +88,15 @@ void camera_callback(rclcpp::Node::SharedPtr node,
   vector<int> aruco_ids;
   vector<vector<cv::Point2f>> aruco_corners;
   aruco_detector.detectMarkers(cv_ptr->image, aruco_corners, aruco_ids);
+
+  // Perform sub-pixel corner refinement on the aruco markers.
+  static cv::Mat img_gray;
+  cv::cvtColor(cv_ptr->image, img_gray, cv::COLOR_RGB2GRAY);
+  static const cv::TermCriteria subpixel_criteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT,
+                                                  40, 0.001);
+  for (auto& marker : aruco_corners) {
+    cv::cornerSubPix(img_gray, marker, cv::Size(5, 5), cv::Size(-1, -1), subpixel_criteria);
+  }
 
   // Process the image with each object manager.
   for (auto& object_manager : object_managers) {
