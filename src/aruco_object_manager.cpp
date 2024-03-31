@@ -2,8 +2,6 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include "aruco_object_manager.hpp"
-
 using namespace std;
 using namespace cv;
 
@@ -93,13 +91,15 @@ void Marker3d::SinglePoint::emplace_points(const vector<Point2f>& img_marker_cor
   }
 }
 
-vector<cv::Point3d> Marker3d::SinglePoint::get_corners_for_board() const
+vector<cv::Point3f> Marker3d::SinglePoint::get_corners_for_board() const
 {
   if (!extrapolate_corners_) return {};
-  vector<Point3d> points;
+  const size_t corner_idx = static_cast<size_t>(corner_);
+  vector<Point3f> points;
   for (size_t i = 0; i < 4; ++i) {
     const auto new_point = corner_point_ + CORNER_OFFSETS[corner_idx][i] * marker_size_;
-    points.emplace_back(new_point);
+    points.emplace_back(Point3f(static_cast<float>(new_point.x), static_cast<float>(new_point.y),
+                                static_cast<float>(new_point.z)));
   }
   return points;
 }
@@ -116,13 +116,14 @@ void Marker3d::AllCorners::emplace_points(const vector<Point2f>& img_marker_corn
   }
 }
 
-vector<cv::Point3d> Marker3d::AllCorners::get_corners_for_board() const
+vector<cv::Point3f> Marker3d::AllCorners::get_corners_for_board() const
 {
-  vector<Point3d> points;
+  vector<Point3f> points;
   for (size_t i = 0; i < 4; ++i) {
     const auto new_point = corners_[i];
     if (!points.empty() && new_point.z != points.back().z) return {};
-    points.emplace_back(new_point);
+    points.emplace_back(Point3f(static_cast<float>(new_point.x), static_cast<float>(new_point.y),
+                                static_cast<float>(new_point.z)));
   }
   return points;
 }
@@ -230,11 +231,11 @@ ArucoObjectManager::ArucoObjectManager(rclcpp::Node::SharedPtr node, const strin
 void ArucoObjectManager::refine_markers(const aruco::ArucoDetector& detector,
                                         const Mat& input_image, vector<int>& marker_ids,
                                         vector<vector<Point2f>>& marker_points,
-                                        const vector<vector<Point2f>>& rejected,
-                                        const Mat& camera_matrix, const Mat& dist_coeffs) const
+                                        vector<vector<Point2f>>& rejected, const Mat& camera_matrix,
+                                        const Mat& dist_coeffs) const
 {
-  if (!enable_board_) return;
-  detector.refineDetectedMarkers(input_image, board_, marker_points, marker_ids, rejected,
+  if (!enable_board_ || !board_) return;
+  detector.refineDetectedMarkers(input_image, *board_, marker_points, marker_ids, rejected,
                                  camera_matrix, dist_coeffs);
 }
 
@@ -397,9 +398,9 @@ void ArucoObjectManager::make_board_()
   if (!enable_board_) return;
 
   vector<int> ids;
-  vector<vector<Point3d>> corners;
+  vector<vector<Point3f>> corners;
   for (const auto& marker : markers_) {
-    const vector<Point3d> marker_corners = marker.location->get_corners_for_board();
+    const vector<Point3f> marker_corners = marker.location->get_corners_for_board();
     if (marker_corners.size() == 0) continue;
     if (!corners.empty() && corners.back().back().z != marker_corners.back().z) {
       RCLCPP_WARN(get_logger(),
@@ -411,7 +412,8 @@ void ArucoObjectManager::make_board_()
     ids.emplace_back(marker.marker_id);
   }
 
-  board_ = aruco::Board(corners, aruco::getPredefinedDictionary(aruco::DICT_4X4_50), ids);
+  board_ =
+    make_shared<aruco::Board>(corners, aruco::getPredefinedDictionary(aruco::DICT_4X4_50), ids);
 }
 
 };  // namespace aruco_object_manager

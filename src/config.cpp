@@ -112,7 +112,7 @@ const ArucoObjectManager::Params TABLE_PARAMS = {
 // ==================================== Cobot0 End Effector ===================================== //
 //                                                                                                //
 
-const double COBOT0_EEF_ARUCO_SIZE = 30.0 / 1000.0;
+const double COBOT0_EEF_ARUCO_SIZE = 29.5 / 1000.0;
 
 const ArucoObjectManager::Params COBOT0_EEF_PARAMS = {
   // SolvePnP method.

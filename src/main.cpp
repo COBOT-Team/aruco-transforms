@@ -82,7 +82,7 @@ void camera_callback(rclcpp::Node::SharedPtr node,
   // Find the Aruco markers in the image.
   static const auto aruco_detector_params = [] {
     auto params = cv::aruco::DetectorParameters();
-    params.cornerRefinementMethod = aruco::CORNER_REFINE_SUBPIX;
+    params.cornerRefinementMethod = cv::aruco::CORNER_REFINE_CONTOUR;
     return params;
   }();
   static const auto aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
