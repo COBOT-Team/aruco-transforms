@@ -37,13 +37,16 @@ const ArucoObjectManager::Params CHESSBOARD_PARAMS = {
                                                    CHESSBOARD_ARUCO_SIZE, true)),
   },
 
+  // Whether or not to construct a Board.
+  true,
+
   // 2D Warped corners.
-  { {
+  {
     Marker2d(0, Corner::TOP_LEFT, Point2f(0, 0)),
     Marker2d(1, Corner::TOP_RIGHT, Point2f(CHESSBOARD_SIZE, 0)),
     Marker2d(2, Corner::BOTTOM_RIGHT, Point2f(CHESSBOARD_SIZE, CHESSBOARD_SIZE)),
     Marker2d(3, Corner::BOTTOM_LEFT, Point2f(0, CHESSBOARD_SIZE)),
-  } },
+  },
 };
 
 //                                                                                                //
@@ -93,13 +96,16 @@ const ArucoObjectManager::Params TABLE_PARAMS = {
             Corner::CENTER, Point3d(-TABLE_OUTER_ARUCO_X, -TABLE_ARUCO_Y, 0.0), TABLE_ARUCO_SIZE)),
   },
 
+  // Whether or not to construct a Board.
+  true,
+
   // 2D Warped corners.
-  { {
+  {
     Marker2d(4, Corner::TOP_LEFT, Point2f(0, 0)),
     Marker2d(7, Corner::TOP_RIGHT, Point2f(TABLE_WIDTH, 0)),
     Marker2d(8, Corner::BOTTOM_RIGHT, Point2f(TABLE_WIDTH, TABLE_HEIGHT)),
     Marker2d(11, Corner::BOTTOM_LEFT, Point2f(0, TABLE_HEIGHT)),
-  } },
+  },
 };
 
 //                                                                                                //
@@ -121,14 +127,11 @@ const ArucoObjectManager::Params COBOT0_EEF_PARAMS = {
                                                     COBOT0_EEF_ARUCO_SIZE, true)),
   },
 
+  // Whether or not to construct a Board.
+  false,
+
   // 2D Warped corners. (Unused)
-  // TODO: Support params without this.
-  { {
-    Marker2d(0, Corner::TOP_LEFT, Point2f(0, 0)),
-    Marker2d(0, Corner::TOP_RIGHT, Point2f(COBOT0_EEF_ARUCO_SIZE, 0)),
-    Marker2d(0, Corner::BOTTOM_RIGHT, Point2f(COBOT0_EEF_ARUCO_SIZE, COBOT0_EEF_ARUCO_SIZE)),
-    Marker2d(0, Corner::BOTTOM_LEFT, Point2f(0, COBOT0_EEF_ARUCO_SIZE)),
-  } },
+  {},
 };
 
 };  // namespace aruco_object_manager

@@ -2,6 +2,8 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
+#include "aruco_object_manager.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -91,6 +93,17 @@ void Marker3d::SinglePoint::emplace_points(const vector<Point2f>& img_marker_cor
   }
 }
 
+vector<cv::Point3d> Marker3d::SinglePoint::get_corners_for_board() const
+{
+  if (!extrapolate_corners_) return {};
+  vector<Point3d> points;
+  for (size_t i = 0; i < 4; ++i) {
+    const auto new_point = corner_point_ + CORNER_OFFSETS[corner_idx][i] * marker_size_;
+    points.emplace_back(new_point);
+  }
+  return points;
+}
+
 Marker3d::AllCorners::AllCorners(const array<Point3d, 4>& corners) : corners_(corners) {}
 
 void Marker3d::AllCorners::emplace_points(const vector<Point2f>& img_marker_corners,
@@ -101,6 +114,17 @@ void Marker3d::AllCorners::emplace_points(const vector<Point2f>& img_marker_corn
     img_points.emplace_back(img_marker_corners[i]);
     obj_points.emplace_back(corners_[i]);
   }
+}
+
+vector<cv::Point3d> Marker3d::AllCorners::get_corners_for_board() const
+{
+  vector<Point3d> points;
+  for (size_t i = 0; i < 4; ++i) {
+    const auto new_point = corners_[i];
+    if (!points.empty() && new_point.z != points.back().z) return {};
+    points.emplace_back(new_point);
+  }
+  return points;
 }
 
 //                                                                                                //
@@ -131,9 +155,20 @@ ArucoObjectManager::ArucoObjectManager(
   , markers_(aruco_params.markers)
   , min_markers_(aruco_params.min_markers)
   , object_corners_2d_(aruco_params.object_corners_2d)
+  , enable_board_(aruco_params.enable_board)
   , pose_pub_(nullptr)
   , pose_topic_("")
 {
+  // Make the aruco board;
+  if (enable_board_) make_board_();
+
+  // The rest of this function deals with the 2D perspective warp. If we don't have points for that,
+  // we return.
+  if (aruco_params.object_corners_2d.size() != 4) {
+    warped_img_pub_ = nullptr;
+    return;
+  }
+
   // Calculate the bounding box of the object in the warped image.
   auto [warp_top_left, warp_btm_right] = [&aruco_params]() -> pair<Point2f, Point2f> {
     const auto corners = aruco_params.object_corners_2d;
@@ -179,13 +214,28 @@ ArucoObjectManager::ArucoObjectManager(rclcpp::Node::SharedPtr node, const strin
   , markers_(aruco_params.markers)
   , min_markers_(aruco_params.min_markers)
   , object_corners_2d_(aruco_params.object_corners_2d)
+  , enable_board_(aruco_params.enable_board)
   , tf_broadcaster_(nullptr)
   , tf_frame_("")
   , warped_img_pub_(nullptr)
   , invert_transform_(false)
 {
+  // Make the aruco board;
+  if (enable_board_) make_board_();
+
   // Setup the pose publisher.
   pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(pose_topic, 1);
+}
+
+void ArucoObjectManager::refine_markers(const aruco::ArucoDetector& detector,
+                                        const Mat& input_image, vector<int>& marker_ids,
+                                        vector<vector<Point2f>>& marker_points,
+                                        const vector<vector<Point2f>>& rejected,
+                                        const Mat& camera_matrix, const Mat& dist_coeffs) const
+{
+  if (!enable_board_) return;
+  detector.refineDetectedMarkers(input_image, board_, marker_points, marker_ids, rejected,
+                                 camera_matrix, dist_coeffs);
 }
 
 void ArucoObjectManager::process(const Mat& input_image, const vector<int> marker_ids,
@@ -300,6 +350,8 @@ bool ArucoObjectManager::warp_perspective_(const Mat& input, Mat& output,
                                            const Size& size, bool fallback,
                                            bool outline_on_fallback)
 {
+  if (object_corners_2d_.size() != 4) return false;
+
   // Find matching markers between the image and the object.
   vector<Point2f> img_points;
   vector<Point2f> obj_points;
@@ -338,6 +390,28 @@ bool ArucoObjectManager::warp_perspective_(const Mat& input, Mat& output,
     cv::rectangle(output, cv::Point(0, 0), size, cv::Scalar(255, 0, 0), 16);
 
   return true;
+}
+
+void ArucoObjectManager::make_board_()
+{
+  if (!enable_board_) return;
+
+  vector<int> ids;
+  vector<vector<Point3d>> corners;
+  for (const auto& marker : markers_) {
+    const vector<Point3d> marker_corners = marker.location->get_corners_for_board();
+    if (marker_corners.size() == 0) continue;
+    if (!corners.empty() && corners.back().back().z != marker_corners.back().z) {
+      RCLCPP_WARN(get_logger(),
+                  "Tried making a board out of markers that are not coplanar (%d and %d)",
+                  ids.back(), marker.marker_id);
+      continue;
+    }
+    corners.emplace_back(marker_corners);
+    ids.emplace_back(marker.marker_id);
+  }
+
+  board_ = aruco::Board(corners, aruco::getPredefinedDictionary(aruco::DICT_4X4_50), ids);
 }
 
 };  // namespace aruco_object_manager

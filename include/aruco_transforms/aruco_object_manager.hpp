@@ -54,6 +54,13 @@ public:
     virtual void emplace_points(const std::vector<cv::Point2f>& img_marker_corners,
                                 std::vector<cv::Point2f>& img_points,
                                 std::vector<cv::Point3d>& obj_points) const = 0;
+
+    /**
+     * Get a vector or corners to add to the aruco board. Returns an empty vector if invalid.
+     *
+     * @return The corners, or an empty vector.
+     */
+    virtual std::vector<cv::Point3d> get_corners_for_board() const = 0;
   };
   /**
    * The location of the marker, defined by a single point.
@@ -71,9 +78,12 @@ public:
      */
     SinglePoint(Corner corner, cv::Point3d corner_point, double marker_size,
                 bool extrapolate_corners = false);
+
     void emplace_points(const std::vector<cv::Point2f>& img_marker_corners,
                         std::vector<cv::Point2f>& img_points,
                         std::vector<cv::Point3d>& obj_points) const override;
+
+    std::vector<cv::Point3d> get_corners_for_board() const override;
 
   private:
     Corner corner_;
@@ -94,9 +104,12 @@ public:
      * @param[in] corners The corners of the marker.
      */
     AllCorners(const std::array<cv::Point3d, 4>& corners);
+
     void emplace_points(const std::vector<cv::Point2f>& img_marker_corners,
                         std::vector<cv::Point2f>& img_points,
                         std::vector<cv::Point3d>& obj_points) const override;
+
+    std::vector<cv::Point3d> get_corners_for_board() const override;
 
   private:
     std::array<cv::Point3d, 4> corners_;
@@ -158,8 +171,11 @@ public:
     // The markers that define the object.
     std::vector<Marker3d> markers;
 
-    // The 4 corners of the object in object space, used to warp the image.
-    std::array<Marker2d, 4> object_corners_2d;
+    // Whether or not to construct a Board. All markers MUST be on a plane if true.
+    bool enable_board;
+
+    // The 4 corners of the object in object space, used to warp the image. Leave empty to disable.
+    std::vector<Marker2d> object_corners_2d;
   };
 
   /**
@@ -193,6 +209,24 @@ public:
                               const Params& aruco_params);
 
   /**
+   * Use our aruco board to refine our markers and try to find missing ones.
+   *
+   * @param[in] detector An Aruco detector.
+   * @param[in] input_image The input image to search in.
+   * @param[out] marker_ids The IDs of the markers that have been detected.
+   * @param[out] marker_points The corners of the markers that have been detected.
+   * @param[in] rejected Rejected marker corners.
+   * @param[in] camera_matrix The camera matrix.
+   * @param[in] dist_coeffs The distortion coefficients of the camera.
+   */
+  void refine_markers(const cv::aruco::ArucoDetector& detector, const cv::Mat& input_image,
+                      std::vector<int>& marker_ids,
+                      std::vector<std::vector<cv::Point2f>>& marker_points,
+                      const std::vector<std::vector<cv::Point2f>>& rejected,
+                      const cv::Mat& camera_matrix, const cv::Mat& dist_coeffs) const;
+)
+
+  /**
    * Process a new image. This will solve the transform between the camera and the object, and warp
    * the image to isolate the object. The warped image will be published to the topic specified in
    * the constructor, and the transform will be broadcasted.
@@ -210,69 +244,76 @@ public:
                const std::string& camera_frame, const cv::Mat& camera_matrix,
                const cv::Mat& dist_coeffs);
 
-  /**
-   * Get the node's logger.
-   *
-   * @return The node's logger.
-   */
-  rclcpp::Logger get_logger() const;
+/**
+ * Get the node's logger.
+ *
+ * @return The node's logger.
+ */
+rclcpp::Logger get_logger() const;
 
 private:
-  /**
-   * Solve the transform between the camera and the object.
-   *
-   * @param[in] img_marker_ids The IDs of the markers that were detected.
-   * @param[in] img_marker_corners The corners of the markers that were detected.
-   * @param[in] camera_matrix The camera matrix.
-   * @param[in] dist_coeffs The distortion coefficients of the camera.
-   * @param[out] transform The transform between the camera and the object.
-   * @param[in] invert If true, the transform is inverted.
-   * @return True if the transform was solved, false otherwise.
-   */
-  bool solve_transform_(const std::vector<int>& img_marker_ids,
-                        const std::vector<std::vector<cv::Point2f>> img_marker_corners,
-                        cv::InputArray camera_matrix, cv::InputArray dist_coeffs,
-                        tf2::Transform& transform, bool invert = true) const;
+/**
+ * Solve the transform between the camera and the object.
+ *
+ * @param[in] img_marker_ids The IDs of the markers that were detected.
+ * @param[in] img_marker_corners The corners of the markers that were detected.
+ * @param[in] camera_matrix The camera matrix.
+ * @param[in] dist_coeffs The distortion coefficients of the camera.
+ * @param[out] transform The transform between the camera and the object.
+ * @param[in] invert If true, the transform is inverted.
+ * @return True if the transform was solved, false otherwise.
+ */
+bool solve_transform_(const std::vector<int>& img_marker_ids,
+                      const std::vector<std::vector<cv::Point2f>> img_marker_corners,
+                      cv::InputArray camera_matrix, cv::InputArray dist_coeffs,
+                      tf2::Transform& transform, bool invert = true) const;
 
-  /**
-   * Warp the input image to isolate the object.
-   *
-   * @param[in] input The input image to warp.
-   * @param[out] output The output image.
-   * @param[in] img_marker_ids The IDs of the markers that were detected.
-   * @param[in] img_marker_corners The corners of the markers that were detected.
-   * @param[in] size The size of the output image.
-   * @param[in] fallback If true, use the previous warp matrix if markers are not detected.
-   * @param[in] outline_on_fallback If true, draw a red outline on the output image if markers are
-   *                                not detected.
-   * @return
-   */
-  bool warp_perspective_(const cv::Mat& input, cv::Mat& output,
-                         const std::vector<int>& img_marker_ids,
-                         const std::vector<std::vector<cv::Point2f>> img_marker_corners,
-                         const cv::Size& size, bool fallback = true,
-                         bool outline_on_fallback = true);
+/**
+ * Warp the input image to isolate the object.
+ *
+ * @param[in] input The input image to warp.
+ * @param[out] output The output image.
+ * @param[in] img_marker_ids The IDs of the markers that were detected.
+ * @param[in] img_marker_corners The corners of the markers that were detected.
+ * @param[in] size The size of the output image.
+ * @param[in] fallback If true, use the previous warp matrix if markers are not detected.
+ * @param[in] outline_on_fallback If true, draw a red outline on the output image if markers are
+ *                                not detected.
+ * @return
+ */
+bool warp_perspective_(const cv::Mat& input, cv::Mat& output,
+                       const std::vector<int>& img_marker_ids,
+                       const std::vector<std::vector<cv::Point2f>> img_marker_corners,
+                       const cv::Size& size, bool fallback = true, bool outline_on_fallback = true);
 
-  rclcpp::Node::SharedPtr node_;
-  std::string tf_frame_;
-  std::string pose_topic_;
-  int warped_img_width_;
-  int warped_img_height_;
-  bool invert_transform_;
+/**
+ * Creates a new aruco board based on the current config.
+ */
+void make_board_();
 
-  cv::SolvePnPMethod pnp_method_;
-  size_t min_markers_;
-  std::vector<Marker3d> markers_;
-  std::array<Marker2d, 4> object_corners_2d_;
+rclcpp::Node::SharedPtr node_;
+std::string tf_frame_;
+std::string pose_topic_;
+int warped_img_width_;
+int warped_img_height_;
+bool invert_transform_;
 
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+cv::SolvePnPMethod pnp_method_;
+size_t min_markers_;
+std::vector<Marker3d> markers_;
+std::vector<Marker2d> object_corners_2d_;
 
-  std::unique_ptr<image_transport::Publisher> warped_img_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
+bool enable_board_;
+cv::aruco::Board board_;
 
-  // The most recent warp matrix. Used when markers are not detected.
-  bool has_previous_warp_matrix_ = false;
-  cv::Mat previous_warp_matrix_;
+std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
+std::unique_ptr<image_transport::Publisher> warped_img_pub_;
+rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
+
+// The most recent warp matrix. Used when markers are not detected.
+bool has_previous_warp_matrix_ = false;
+cv::Mat previous_warp_matrix_;
 };
 
 };  // namespace aruco_object_manager

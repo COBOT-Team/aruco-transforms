@@ -37,10 +37,8 @@ int main(int argc, char** argv)
   auto tf_broadcaster = make_shared<tf2_ros::TransformBroadcaster>(node);
 
   // Chessboard.
-  object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it,
-  params.chessboard.frame,
-                                                  params.chessboard.warped.topic,
-                                                  CHESSBOARD_PARAMS,
+  object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it, params.chessboard.frame,
+                                                  params.chessboard.warped.topic, CHESSBOARD_PARAMS,
                                                   params.chessboard.warped.size, false));
   // object_managers.emplace_back(
   //   ArucoObjectManager(node, params.cobot0_eef.pose_topic, CHESSBOARD_PARAMS));
@@ -82,24 +80,21 @@ void camera_callback(rclcpp::Node::SharedPtr node,
   cv::Mat dist_coeffs(1, 5, CV_64F, (void*)camera_info_msg->d.data());
 
   // Find the Aruco markers in the image.
-  static const auto aruco_detector_params = cv::aruco::DetectorParameters();
+  static const auto aruco_detector_params = [] {
+    auto params = cv::aruco::DetectorParameters();
+    params.cornerRefinementMethod = aruco::CORNER_REFINE_SUBPIX;
+    return params;
+  }();
   static const auto aruco_dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
   static const cv::aruco::ArucoDetector aruco_detector(aruco_dictionary, aruco_detector_params);
   vector<int> aruco_ids;
-  vector<vector<cv::Point2f>> aruco_corners;
-  aruco_detector.detectMarkers(cv_ptr->image, aruco_corners, aruco_ids);
-
-  // Perform sub-pixel corner refinement on the aruco markers.
-  // static cv::Mat img_gray;
-  // cv::cvtColor(cv_ptr->image, img_gray, cv::COLOR_RGB2GRAY);
-  // static const cv::TermCriteria subpixel_criteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT,
-  //                                                 40, 0.001);
-  // for (auto& marker : aruco_corners) {
-  //   cv::cornerSubPix(img_gray, marker, cv::Size(5, 5), cv::Size(-1, -1), subpixel_criteria);
-  // }
+  vector<vector<cv::Point2f>> aruco_corners, rejected;
+  aruco_detector.detectMarkers(cv_ptr->image, aruco_corners, aruco_ids, rejected);
 
   // Process the image with each object manager.
   for (auto& object_manager : object_managers) {
+    object_manager.refine_markers(aruco_detector, cv_ptr->image, aruco_ids, aruco_corners, rejected,
+                                  camera_matrix, dist_coeffs);
     object_manager.process(cv_ptr->image, aruco_ids, aruco_corners, camera_frame, camera_matrix,
                            dist_coeffs);
   }
