@@ -21,7 +21,7 @@ const ArucoObjectManager::Params CHESSBOARD_PARAMS = {
   SOLVEPNP_IPPE,
 
   // Minimum number of markers.
-  3,
+  4,
 
   // 3D object markers.
   {
@@ -63,7 +63,7 @@ const ArucoObjectManager::Params TABLE_PARAMS = {
   SOLVEPNP_IPPE,
 
   // Minimum number of markers.
-  4,
+  5,
 
   // 3D object markers.
   {

@@ -90,13 +90,13 @@ void camera_callback(rclcpp::Node::SharedPtr node,
   aruco_detector.detectMarkers(cv_ptr->image, aruco_corners, aruco_ids);
 
   // Perform sub-pixel corner refinement on the aruco markers.
-  static cv::Mat img_gray;
-  cv::cvtColor(cv_ptr->image, img_gray, cv::COLOR_RGB2GRAY);
-  static const cv::TermCriteria subpixel_criteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT,
-                                                  40, 0.001);
-  for (auto& marker : aruco_corners) {
-    cv::cornerSubPix(img_gray, marker, cv::Size(5, 5), cv::Size(-1, -1), subpixel_criteria);
-  }
+  // static cv::Mat img_gray;
+  // cv::cvtColor(cv_ptr->image, img_gray, cv::COLOR_RGB2GRAY);
+  // static const cv::TermCriteria subpixel_criteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT,
+  //                                                 40, 0.001);
+  // for (auto& marker : aruco_corners) {
+  //   cv::cornerSubPix(img_gray, marker, cv::Size(5, 5), cv::Size(-1, -1), subpixel_criteria);
+  // }
 
   // Process the image with each object manager.
   for (auto& object_manager : object_managers) {
