@@ -108,30 +108,4 @@ const ArucoObjectManager::Params TABLE_PARAMS = {
   },
 };
 
-//                                                                                                //
-// ==================================== Cobot0 End Effector ===================================== //
-//                                                                                                //
-
-const double COBOT0_EEF_ARUCO_SIZE = 29.5 / 1000.0;
-
-const ArucoObjectManager::Params COBOT0_EEF_PARAMS = {
-  // SolvePnP method.
-  SOLVEPNP_IPPE_SQUARE,
-
-  // Minimum number of markers.
-  1,
-
-  // 3D object markers.
-  {
-    Marker3d(12, make_shared<Marker3d::SinglePoint>(Corner::CENTER, Point3d(0.0, 0.0, 0.0),
-                                                    COBOT0_EEF_ARUCO_SIZE, true)),
-  },
-
-  // Whether or not to construct a Board.
-  false,
-
-  // 2D Warped corners. (Unused)
-  {},
-};
-
-};  // namespace aruco_object_manager
+}  // namespace aruco_object_manager

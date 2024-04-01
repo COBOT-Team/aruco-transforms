@@ -40,17 +40,11 @@ int main(int argc, char** argv)
   object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it, params.chessboard.frame,
                                                   params.chessboard.warped.topic, CHESSBOARD_PARAMS,
                                                   params.chessboard.warped.size, false));
-  // object_managers.emplace_back(
-  //   ArucoObjectManager(node, params.cobot0_eef.pose_topic, CHESSBOARD_PARAMS));
 
   // Table.
   object_managers.emplace_back(ArucoObjectManager(node, tf_broadcaster, it, params.table.frame,
                                                   params.table.warped.topic, TABLE_PARAMS,
                                                   params.table.warped.width, true));
-
-  // Cobot0 end effector.
-  object_managers.emplace_back(
-    ArucoObjectManager(node, params.cobot0_eef.pose_topic, COBOT0_EEF_PARAMS));
 
   image_transport::CameraSubscriber camera_sub =
     it.subscribeCamera(params.camera_base_topic, 1, bind(camera_callback, node, _1, _2));

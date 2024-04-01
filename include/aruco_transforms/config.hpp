@@ -8,7 +8,6 @@ namespace aruco_object_manager
 
 extern const ArucoObjectManager::Params CHESSBOARD_PARAMS;
 extern const ArucoObjectManager::Params TABLE_PARAMS;
-extern const ArucoObjectManager::Params COBOT0_EEF_PARAMS;
 
 };  // namespace aruco_object_manager
 #endif
