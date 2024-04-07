@@ -66,7 +66,7 @@ const ArucoObjectManager::Params TABLE_PARAMS = {
   SOLVEPNP_IPPE,
 
   // Minimum number of markers.
-  5,
+  7,
 
   // 3D object markers.
   {
