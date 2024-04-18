@@ -10,7 +10,7 @@ aruco_transforms_params:
     frame:
       {
         type: string,
-        default_value: "chessboard_frame",
+        default_value: "chessboard_frame_dynamic",
         description: "The TF2 frame_id of the chessboard.",
       }
     warped:
